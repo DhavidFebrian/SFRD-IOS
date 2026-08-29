@@ -1,0 +1,77 @@
+name: Build iOS IPA & Multiplatform
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: 🍏 Build iOS Application (IPA)
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🐦 Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: 🔍 Locate Flutter Project Directory
+        id: locate-project
+        run: |
+          if [ -f "pubspec.yaml" ]; then
+            echo "project_dir=." >> $GITHUB_OUTPUT
+          elif [ -f "SFRD_IOS/pubspec.yaml" ]; then
+            echo "project_dir=SFRD_IOS" >> $GITHUB_OUTPUT
+          else
+            echo "project_dir=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Install Flutter Dependencies
+        run: |
+          cd ${{ steps.locate-project.outputs.project_dir }}
+          flutter pub get
+
+      - name: 🍎 Set up CocoaPods & Build Settings
+        run: |
+          cd ${{ steps.locate-project.outputs.project_dir }}/ios
+          pod install --repo-update || true
+
+      - name: 🚀 Build iOS IPA (No-CodeSign for Sideloading/AltStore/TrollStore)
+        run: |
+          cd ${{ steps.locate-project.outputs.project_dir }}
+          flutter build ios --no-codesign --release
+          
+          # Package Payload into installable .ipa
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r SFRD-Release.ipa Payload
+          echo "IPA Created successfully at build/ios/iphoneos/SFRD-Release.ipa"
+
+      - name: 📤 Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SFRD-iOS-IPA
+          path: ${{ steps.locate-project.outputs.project_dir }}/build/ios/iphoneos/SFRD-Release.ipa
+          if-no-files-found: warn
+
+      - name: 📤 Upload Runner.app Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: SFRD-iOS-App-Archive
+          path: ${{ steps.locate-project.outputs.project_dir }}/build/ios/iphoneos/Runner.app
+          if-no-files-found: warn
