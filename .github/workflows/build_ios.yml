@@ -40,6 +40,12 @@ jobs:
             echo "project_dir=." >> $GITHUB_OUTPUT
           fi
 
+      - name: 📱 Generate Native iOS Xcode Project Structure
+        run: |
+          cd ${{ steps.locate-project.outputs.project_dir }}
+          # Generate complete Runner.xcodeproj and iOS files
+          flutter create . --platforms=ios --org=com.aistudio.jadwalfoto.qywrkx
+
       - name: 📦 Install Flutter Dependencies
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}
