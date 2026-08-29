@@ -43,8 +43,8 @@ jobs:
       - name: 📱 Generate Native iOS Xcode Project Structure
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}
-          # Generate complete Runner.xcodeproj and iOS files
-          flutter create . --platforms=ios --org=com.aistudio.jadwalfoto.qywrkx
+          # Generate complete Runner.xcodeproj with explicit valid package name
+          flutter create --project-name sfrd_ios --platforms=ios --org com.aistudio.jadwalfoto.qywrkx .
 
       - name: 📦 Install Flutter Dependencies
         run: |
