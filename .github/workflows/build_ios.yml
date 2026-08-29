@@ -43,8 +43,19 @@ jobs:
       - name: 📱 Generate Native iOS Xcode Project Structure
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}
-          # Generate complete Runner.xcodeproj with explicit valid package name
           flutter create --project-name sfrd_ios --platforms=ios --org com.aistudio.jadwalfoto.qywrkx .
+
+      - name: ⚙️ Configure iOS 15.5+ Deployment Target for ML Kit
+        run: |
+          cd ${{ steps.locate-project.outputs.project_dir }}
+          # Set minimum iOS deployment target in Podfile & Xcode project to 15.5
+          if [ -f "ios/Podfile" ]; then
+            sed -i '' "s/# platform :ios.*/platform :ios, '15.5'/g" ios/Podfile || true
+            sed -i '' "s/platform :ios.*/platform :ios, '15.5'/g" ios/Podfile || true
+          fi
+          if [ -f "ios/Runner.xcodeproj/project.pbxproj" ]; then
+            sed -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9\.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g" ios/Runner.xcodeproj/project.pbxproj || true
+          fi
 
       - name: 📦 Install Flutter Dependencies
         run: |
@@ -54,7 +65,8 @@ jobs:
       - name: 🍎 Set up CocoaPods & Build Settings
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}/ios
-          pod install --repo-update || true
+          pod repo update || true
+          pod install || true
 
       - name: 🚀 Build iOS IPA (No-CodeSign for Sideloading/AltStore/TrollStore)
         run: |
