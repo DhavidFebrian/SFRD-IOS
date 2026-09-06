@@ -137,7 +137,7 @@ class _MediaScreenState extends State<MediaScreen> {
           );
         },
         backgroundColor: const Color(0xFF2B2D42),
-        icon: const Icon(CupertinoIcons.camera_badge_ellipsis, color: Colors.white),
+        icon: const Icon(CupertinoIcons.camera_fill, color: Colors.white),
         label: const Text('Tambah Jadwal', style: TextStyle(color: Colors.white)),
       ),
     );
