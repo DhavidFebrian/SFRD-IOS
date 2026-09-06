@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/state/app_state_provider.dart';
 import '../../../core/utils/whatsapp_formatter.dart';
+import '../../../core/widgets/listing_detail_bottom_sheet.dart';
 import '../models/meeting_listing.dart';
 import '../widgets/add_meeting_listing_dialog.dart';
 
@@ -210,178 +212,307 @@ class _WeeklyMeetingScreenState extends State<WeeklyMeetingScreen> {
   }
 
   Widget _buildListingCard(BuildContext context, MeetingListing item, AppStateProvider state) {
+    final scraped = state.getListingDetail(item.idListing);
+    final imageUrl = scraped?.primaryImageUrl;
+    final displayTitle = scraped?.title.isNotEmpty == true ? scraped!.title : (item.judul.isNotEmpty ? item.judul : item.keterangan);
+    final displayPrice = scraped?.price.isNotEmpty == true ? scraped!.price : null;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2.5,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          ListingDetailBottomSheet.show(
+            context,
+            idListing: item.idListing,
+            namaMe: item.namaMe,
+            detail: scraped,
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: ID Listing + Posting IG Switch
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Top Image Banner from raywhitecipete.net
+            Stack(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE600),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    item.idListing.isNotEmpty ? item.idListing : '(Tanpa ID)',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Color(0xFF2B2D42),
-                    ),
-                  ),
+                  height: 140,
+                  width: double.infinity,
+                  color: Colors.grey.shade200,
+                  child: imageUrl != null && imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (ctx, _) => Container(
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (ctx, _, __) => Container(
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: Icon(CupertinoIcons.photo, size: 36, color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF2B2D42).withOpacity(0.08),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(CupertinoIcons.photo_on_rectangle, size: 32, color: Colors.grey.shade400),
+                                const SizedBox(height: 4),
+                                Text(
+                                  scraped?.isSold == true ? 'SOLD / INACTIVE' : 'Ketuk untuk memuat foto web...',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
-                Row(
-                  children: [
-                    const Text('Posting IG:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 4),
-                    Switch.adaptive(
-                      value: item.postingIg,
-                      activeColor: Colors.green,
-                      onChanged: (_) => state.toggleMeetingListingPostingIg(item),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
 
-            // ME Name
-            Row(
-              children: [
-                const Icon(CupertinoIcons.person_fill, size: 16, color: Colors.blueGrey),
-                const SizedBox(width: 6),
-                Text(
-                  item.namaMe.isNotEmpty ? item.namaMe : 'ME Tidak Disebutkan',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-              ],
-            ),
-
-            // Lokasi
-            if (item.lokasi.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(CupertinoIcons.location_solid, size: 16, color: Colors.redAccent),
-                  const SizedBox(width: 6),
-                  Expanded(
+                // Top Badges Overlay
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE600),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4),
+                      ],
+                    ),
                     child: Text(
-                      item.lokasi,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+                      item.idListing.isNotEmpty ? item.idListing : '(Tanpa ID)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Color(0xFF2B2D42),
+                      ),
                     ),
                   ),
-                  if (item.mapsQueryUrl.isNotEmpty)
-                    InkWell(
-                      onTap: () => launchUrl(Uri.parse(item.mapsQueryUrl), mode: LaunchMode.externalApplication),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
-                        child: Text(
-                          'Maps',
-                          style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+
+                if (scraped?.isSold == true)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade600,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'SOLD',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                else if (displayPrice != null)
+                  Positioned(
+                    bottom: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        displayPrice,
+                        style: const TextStyle(
+                          color: Color(0xFFFFE600),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                ],
-              ),
-            ],
+                  ),
+              ],
+            ),
 
-            // Keterangan / Judul
-            if (item.keterangan.isNotEmpty || item.judul.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                item.keterangan.isNotEmpty ? item.keterangan : item.judul,
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-              ),
-            ],
-
-            // Catatan
-            if (item.catatan.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Text(
-                  'Catatan: ${item.catatan}',
-                  style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
-                ),
-              ),
-            ],
-
-            const Divider(height: 20),
-
-            // Bottom Actions: Website link + WhatsApp Share + Delete
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (item.websiteUrl.isNotEmpty)
-                  TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse(item.websiteUrl), mode: LaunchMode.externalApplication),
-                    icon: const Icon(CupertinoIcons.link, size: 14),
-                    label: const Text('Detail Web', style: TextStyle(fontSize: 12)),
-                  )
-                else
-                  const SizedBox(),
-
-                Row(
-                  children: [
-                    // WhatsApp broadcast button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        final broadcastText = WhatsAppFormatter.generateWeeklyMeetingBroadcast(item);
-                        WhatsAppFormatter.openWhatsApp(message: broadcastText);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            // Card Body
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  if (displayTitle.isNotEmpty)
+                    Text(
+                      displayTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF2B2D42),
                       ),
-                      icon: const Icon(CupertinoIcons.chat_bubble_2_fill, size: 14),
-                      label: const Text('WA Broadcast', style: TextStyle(fontSize: 12)),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
+                  const SizedBox(height: 6),
 
-                    // Delete button
-                    IconButton(
-                      icon: const Icon(CupertinoIcons.trash, size: 18, color: Colors.red),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Hapus Listing?'),
-                            content: Text('Yakin ingin menghapus ${item.idListing}?'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  state.deleteMeetingListingItem(item);
-                                },
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                                child: const Text('Hapus'),
-                              ),
-                            ],
+                  // ME Name Row
+                  Row(
+                    children: [
+                      const Icon(CupertinoIcons.person_fill, size: 15, color: Colors.blueGrey),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          item.namaMe.isNotEmpty ? item.namaMe : 'ME Tidak Disebutkan',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                      // Posting IG Switch
+                      Row(
+                        children: [
+                          const Text('Posting IG:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 4),
+                          Switch.adaptive(
+                            value: item.postingIg,
+                            activeColor: Colors.green,
+                            onChanged: (_) => state.toggleMeetingListingPostingIg(item),
                           ),
-                        );
-                      },
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Lokasi
+                  if (item.lokasi.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(CupertinoIcons.location_solid, size: 15, color: Colors.redAccent),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            item.lokasi,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (item.mapsQueryUrl.isNotEmpty)
+                          InkWell(
+                            onTap: () => launchUrl(Uri.parse(item.mapsQueryUrl), mode: LaunchMode.externalApplication),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                'Maps',
+                                style: TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
-                ),
-              ],
+
+                  // Catatan
+                  if (item.catatan.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Text(
+                        'Catatan: ${item.catatan}',
+                        style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                      ),
+                    ),
+                  ],
+
+                  const Divider(height: 20),
+
+                  // Bottom Action Strip
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // View Gallery & Specs CTA
+                      InkWell(
+                        onTap: () {
+                          ListingDetailBottomSheet.show(
+                            context,
+                            idListing: item.idListing,
+                            namaMe: item.namaMe,
+                            detail: scraped,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(CupertinoIcons.photo_on_rectangle, size: 14, color: Colors.blue),
+                            const SizedBox(width: 4),
+                            Text(
+                              scraped?.galleryImages.isNotEmpty == true
+                                  ? '${scraped!.galleryImages.length} Foto • Detail'
+                                  : 'Lihat Detail Web',
+                              style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Row(
+                        children: [
+                          // WhatsApp Broadcast
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final broadcastText = WhatsAppFormatter.generateWeeklyMeetingBroadcast(item);
+                              WhatsAppFormatter.openWhatsApp(message: broadcastText);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            icon: const Icon(CupertinoIcons.chat_bubble_2_fill, size: 14),
+                            label: const Text('WA Broadcast', style: TextStyle(fontSize: 11)),
+                          ),
+                          const SizedBox(width: 6),
+
+                          // Delete button
+                          IconButton(
+                            icon: const Icon(CupertinoIcons.trash, size: 18, color: Colors.red),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Hapus Listing?'),
+                                  content: Text('Yakin ingin menghapus ${item.idListing}?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        state.deleteMeetingListingItem(item);
+                                      },
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                      child: const Text('Hapus'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),

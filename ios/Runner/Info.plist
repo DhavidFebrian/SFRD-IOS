@@ -48,7 +48,11 @@
 	<string>Aplikasi SFRD membutuhkan akses galeri foto untuk memilih atau menyimpan poster promosi dan dokumentasi listing.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Aplikasi SFRD membutuhkan akses mikrofon untuk perekaman video dokumentasi.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Aplikasi SFRD membutuhkan lokasi untuk validasi kehadiran absensi weekly meeting.</string>
+	<!-- App Transport Security for network image loading and scraping -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

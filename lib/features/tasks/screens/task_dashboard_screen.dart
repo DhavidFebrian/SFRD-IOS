@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/state/app_state_provider.dart';
+import '../../../core/widgets/listing_detail_bottom_sheet.dart';
 import '../models/edit_foto_task.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
@@ -188,180 +189,241 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
   }
 
   Widget _buildTaskCard(BuildContext context, EditFotoTask task, AppStateProvider state) {
+    final scraped = state.getListingDetail(task.idListing);
+    final imageUrl = scraped?.primaryImageUrl;
+    final displayTitle = scraped?.title.isNotEmpty == true ? scraped!.title : (task.judul.isNotEmpty ? task.judul : null);
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: ID Listing + Status Chips
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE600),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    task.idListing.isNotEmpty ? task.idListing : '(Manual)',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Color(0xFF2B2D42),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: task.done ? Colors.green.shade100 : Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    task.done ? 'Edit Selesai' : 'Perlu Edit',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: task.done ? Colors.green.shade900 : Colors.amber.shade900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // ME Name & Judul
-            Row(
-              children: [
-                const Icon(CupertinoIcons.person_fill, size: 16, color: Colors.blueGrey),
-                const SizedBox(width: 6),
-                Text(
-                  task.namaMe.isNotEmpty ? task.namaMe : 'ME Belum Ditentukan',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ],
-            ),
-            if (task.judul.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                task.judul,
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-              ),
-            ],
-
-            const SizedBox(height: 10),
-
-            // Two Checkbox Actions with instant Google Sheets sync
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2.5,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          ListingDetailBottomSheet.show(
+            context,
+            idListing: task.idListing,
+            namaMe: task.namaMe,
+            detail: scraped,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Thumbnail + ID + Status Chips
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Done Checkbox
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => state.toggleEditFotoDone(task),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: task.done,
-                            activeColor: Colors.green,
-                            onChanged: (_) => state.toggleEditFotoDone(task),
-                          ),
-                          const Flexible(
-                            child: Text(
-                              'Edit Selesai',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // Photo Thumbnail
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey.shade200,
+                      child: imageUrl != null && imageUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              errorWidget: (ctx, _, __) => const Icon(CupertinoIcons.photo, color: Colors.grey),
+                            )
+                          : const Icon(CupertinoIcons.camera, color: Colors.grey),
                     ),
                   ),
+                  const SizedBox(width: 12),
 
-                  // Posting IG Checkbox
+                  // Info
                   Expanded(
-                    child: InkWell(
-                      onTap: () => state.toggleEditFotoPostingIg(task),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: task.postingIg,
-                            activeColor: Colors.pink,
-                            onChanged: (_) => state.toggleEditFotoPostingIg(task),
-                          ),
-                          const Flexible(
-                            child: Text(
-                              'Posting IG',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFE600),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                task.idListing.isNotEmpty ? task.idListing : '(Manual)',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xFF2B2D42),
+                                ),
+                              ),
                             ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: task.done ? Colors.green.shade100 : Colors.amber.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                task.done ? 'Edit Selesai' : 'Perlu Edit',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: task.done ? Colors.green.shade900 : Colors.amber.shade900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        // Title
+                        if (displayTitle != null)
+                          Text(
+                            displayTitle,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2B2D42)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+
+                        // ME
+                        Row(
+                          children: [
+                            const Icon(CupertinoIcons.person_fill, size: 14, color: Colors.blueGrey),
+                            const SizedBox(width: 4),
+                            Text(
+                              task.namaMe.isNotEmpty ? task.namaMe : 'ME Belum Ditentukan',
+                              style: const TextStyle(fontSize: 12, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
 
-            // Notes / Catatan
-            if (task.editNotes.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              // Two Checkbox Actions with instant Google Sheets sync
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(CupertinoIcons.pencil_circle_fill, size: 16, color: Colors.blue),
-                    const SizedBox(width: 6),
+                    // Done Checkbox
                     Expanded(
-                      child: Text(
-                        'Catatan: ${task.editNotes}',
-                        style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                      child: InkWell(
+                        onTap: () => state.toggleEditFotoDone(task),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: task.done,
+                              activeColor: Colors.green,
+                              onChanged: (_) => state.toggleEditFotoDone(task),
+                            ),
+                            const Flexible(
+                              child: Text(
+                                'Edit Selesai',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Posting IG Checkbox
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => state.toggleEditFotoPostingIg(task),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: task.postingIg,
+                              activeColor: Colors.pink,
+                              onChanged: (_) => state.toggleEditFotoPostingIg(task),
+                            ),
+                            const Flexible(
+                              child: Text(
+                                'Posting IG',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
 
-            const Divider(height: 18),
-
-            // Action Row: Edit Catatan & Web Link
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (task.websiteUrl.isNotEmpty)
-                  TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse(task.websiteUrl), mode: LaunchMode.externalApplication),
-                    icon: const Icon(CupertinoIcons.link, size: 14),
-                    label: const Text('Detail Web', style: TextStyle(fontSize: 12)),
-                  )
-                else
-                  const SizedBox(),
-
-                TextButton.icon(
-                  onPressed: () => _showEditNotesDialog(context, task, state),
-                  icon: const Icon(CupertinoIcons.square_pencil, size: 16),
-                  label: const Text('Ubah Catatan', style: TextStyle(fontSize: 12)),
+              // Notes
+              if (task.editNotes.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(CupertinoIcons.pencil_circle_fill, size: 16, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Catatan: ${task.editNotes}',
+                          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
+
+              const Divider(height: 18),
+
+              // Action Row: Photos CTA & Edit Catatan
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      ListingDetailBottomSheet.show(
+                        context,
+                        idListing: task.idListing,
+                        namaMe: task.namaMe,
+                        detail: scraped,
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(CupertinoIcons.photo_on_rectangle, size: 14, color: Colors.blue),
+                        const SizedBox(width: 4),
+                        Text(
+                          scraped?.galleryImages.isNotEmpty == true
+                              ? '${scraped!.galleryImages.length} Foto Web'
+                              : 'Lihat Detail Web',
+                          style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  TextButton.icon(
+                    onPressed: () => _showEditNotesDialog(context, task, state),
+                    icon: const Icon(CupertinoIcons.square_pencil, size: 16),
+                    label: const Text('Ubah Catatan', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

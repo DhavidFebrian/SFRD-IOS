@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/state/app_state_provider.dart';
 import '../../../core/utils/whatsapp_formatter.dart';
+import '../../../core/widgets/listing_detail_bottom_sheet.dart';
 import '../models/schedule.dart';
 import '../widgets/add_schedule_dialog.dart';
 
@@ -121,7 +123,7 @@ class _MediaScreenState extends State<MediaScreen> {
                             itemCount: schedules.length,
                             itemBuilder: (context, index) {
                               final item = schedules[index];
-                              return _buildScheduleCard(context, item);
+                              return _buildScheduleCard(context, item, state);
                             },
                           ),
                   ),
@@ -143,164 +145,250 @@ class _MediaScreenState extends State<MediaScreen> {
     );
   }
 
-  Widget _buildScheduleCard(BuildContext context, Schedule item) {
+  Widget _buildScheduleCard(BuildContext context, Schedule item, AppStateProvider state) {
     final isDone = item.isDone;
+    final scraped = state.getListingDetail(item.idListing);
+    final imageUrl = scraped?.primaryImageUrl;
+    final displayTitle = scraped?.title.isNotEmpty == true ? scraped!.title : null;
+    final displayPrice = scraped?.price.isNotEmpty == true ? scraped!.price : null;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2.5,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          ListingDetailBottomSheet.show(
+            context,
+            idListing: item.idListing,
+            namaMe: item.namaMe,
+            detail: scraped,
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: ID Listing + Type + Status Chip
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE600),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    item.idListing.isNotEmpty ? item.idListing : '(Manual)',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Color(0xFF2B2D42),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    item.type,
-                    style: TextStyle(color: Colors.blue.shade800, fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDone ? Colors.green.shade100 : Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    isDone ? 'Selesai' : 'Pending',
-                    style: TextStyle(
-                      color: isDone ? Colors.green.shade900 : Colors.orange.shade900,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // ME Name
-            Row(
-              children: [
-                const Icon(CupertinoIcons.person_fill, size: 16, color: Colors.blueGrey),
-                const SizedBox(width: 6),
-                Text(
-                  item.namaMe.isNotEmpty ? item.namaMe : 'ME Belum Ditentukan',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-
-            // Tanggal & Jam
-            Row(
-              children: [
-                const Icon(CupertinoIcons.calendar, size: 15, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(
-                  '${item.tanggal} • ${item.jam}',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
-                ),
-                if (item.staff.isNotEmpty) ...[
-                  const Spacer(),
-                  const Icon(CupertinoIcons.camera, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    item.staff,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                  ),
-                ],
-              ],
-            ),
-
-            // Lokasi
-            if (item.lokasi.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
+            // Top Image Banner (if available from raywhitecipete.net)
+            if (imageUrl != null && imageUrl.isNotEmpty)
+              Stack(
                 children: [
-                  const Icon(CupertinoIcons.location_solid, size: 15, color: Colors.redAccent),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      item.lokasi,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  SizedBox(
+                    height: 120,
+                    width: double.infinity,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (ctx, _) => Container(color: Colors.grey.shade200),
+                      errorWidget: (ctx, _, __) => Container(color: Colors.grey.shade200),
                     ),
                   ),
-                  if (item.mapsQueryUrl.isNotEmpty)
-                    InkWell(
-                      onTap: () => launchUrl(Uri.parse(item.mapsQueryUrl), mode: LaunchMode.externalApplication),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
+                  if (displayPrice != null)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                         child: Text(
-                          'Maps',
-                          style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                          displayPrice,
+                          style: const TextStyle(
+                            color: Color(0xFFFFE600),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                 ],
               ),
-            ],
 
-            const Divider(height: 20),
-
-            // Bottom Actions: Website link + WhatsApp Follow Up
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (item.websiteUrl.isNotEmpty)
-                  TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse(item.websiteUrl), mode: LaunchMode.externalApplication),
-                    icon: const Icon(CupertinoIcons.link, size: 14),
-                    label: const Text('RayWhite.net', style: TextStyle(fontSize: 12)),
-                  )
-                else
-                  const SizedBox(),
-
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final message = WhatsAppFormatter.generateScheduleFollowUpMessage(item);
-                    WhatsAppFormatter.openWhatsApp(message: message);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Row: ID Listing + Type + Status Chip
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFE600),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          item.idListing.isNotEmpty ? item.idListing : '(Manual)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF2B2D42),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.type,
+                          style: TextStyle(color: Colors.blue.shade800, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDone ? Colors.green.shade100 : Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isDone ? 'Selesai' : 'Pending',
+                          style: TextStyle(
+                            color: isDone ? Colors.green.shade900 : Colors.orange.shade900,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  icon: const Icon(CupertinoIcons.chat_bubble_fill, size: 14),
-                  label: const Text('Follow Up WA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
+                  const SizedBox(height: 10),
+
+                  // Scraped Title
+                  if (displayTitle != null) ...[
+                    Text(
+                      displayTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF2B2D42),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+
+                  // ME Name
+                  Row(
+                    children: [
+                      const Icon(CupertinoIcons.person_fill, size: 16, color: Colors.blueGrey),
+                      const SizedBox(width: 6),
+                      Text(
+                        item.namaMe.isNotEmpty ? item.namaMe : 'ME Belum Ditentukan',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Tanggal & Jam
+                  Row(
+                    children: [
+                      const Icon(CupertinoIcons.calendar, size: 15, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${item.tanggal} • ${item.jam}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      ),
+                      if (item.staff.isNotEmpty) ...[
+                        const Spacer(),
+                        const Icon(CupertinoIcons.camera, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          item.staff,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        ),
+                      ],
+                    ],
+                  ),
+
+                  // Lokasi
+                  if (item.lokasi.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(CupertinoIcons.location_solid, size: 15, color: Colors.redAccent),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            item.lokasi,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (item.mapsQueryUrl.isNotEmpty)
+                          InkWell(
+                            onTap: () => launchUrl(Uri.parse(item.mapsQueryUrl), mode: LaunchMode.externalApplication),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                'Maps',
+                                style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  const Divider(height: 20),
+
+                  // Bottom Actions: Website link + WhatsApp Follow Up
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          ListingDetailBottomSheet.show(
+                            context,
+                            idListing: item.idListing,
+                            namaMe: item.namaMe,
+                            detail: scraped,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(CupertinoIcons.photo_on_rectangle, size: 14, color: Colors.blue),
+                            const SizedBox(width: 4),
+                            Text(
+                              scraped?.galleryImages.isNotEmpty == true
+                                  ? '${scraped!.galleryImages.length} Foto • Detail'
+                                  : 'Lihat Detail Web',
+                              style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final message = WhatsAppFormatter.generateScheduleFollowUpMessage(item);
+                          WhatsAppFormatter.openWhatsApp(message: message);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(CupertinoIcons.chat_bubble_fill, size: 14),
+                        label: const Text('Follow Up WA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),

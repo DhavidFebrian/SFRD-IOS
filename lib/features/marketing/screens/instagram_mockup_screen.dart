@@ -3,6 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/state/app_state_provider.dart';
 
 class InstagramMockupScreen extends StatefulWidget {
   const InstagramMockupScreen({Key? key}) : super(key: key);
@@ -13,10 +16,12 @@ class InstagramMockupScreen extends StatefulWidget {
 
 class _InstagramMockupScreenState extends State<InstagramMockupScreen> {
   String _aspectRatio = '1:1'; // 1:1, 4:5, 9:16
+  String? _selectedListingId;
+  String? _currentPhotoUrl;
 
-  final _idController = TextEditingController(text: 'L-0912');
+  final _idController = TextEditingController(text: '11918');
   final _titleController = TextEditingController(text: 'Rumah Mewah Modern Siap Huni');
-  final _lokasiController = TextEditingController(text: 'Cipete Selatan, Jakarta Selatan');
+  final _lokasiController = TextEditingController(text: 'Cipete, Jakarta Selatan');
   final _hargaController = TextEditingController(text: 'Rp 6,5 Miliar (Nego)');
   final _ltController = TextEditingController(text: '200');
   final _lbController = TextEditingController(text: '250');
@@ -46,6 +51,27 @@ class _InstagramMockupScreenState extends State<InstagramMockupScreen> {
     _kontakController.dispose();
     _captionController.dispose();
     super.dispose();
+  }
+
+  void _onListingSelected(String idListing, AppStateProvider state) {
+    final detail = state.getListingDetail(idListing);
+    setState(() {
+      _selectedListingId = idListing;
+      _idController.text = idListing;
+      if (detail != null) {
+        if (detail.title.isNotEmpty) _titleController.text = detail.title;
+        if (detail.price.isNotEmpty) _hargaController.text = detail.price;
+        if (detail.lt.isNotEmpty) _ltController.text = detail.lt;
+        if (detail.lb.isNotEmpty) _lbController.text = detail.lb;
+        if (detail.kt.isNotEmpty) _ktController.text = detail.kt;
+        if (detail.km.isNotEmpty) _kmController.text = detail.km;
+        if (detail.agentName.isNotEmpty) _kontakController.text = '${detail.agentName} - Ray White Cipete';
+        if (detail.primaryImageUrl != null && detail.primaryImageUrl!.isNotEmpty) {
+          _currentPhotoUrl = detail.primaryImageUrl;
+        }
+      }
+      _regenerateCaption();
+    });
   }
 
   void _regenerateCaption() {
@@ -78,7 +104,7 @@ Info & Private Showing:
 📞 $kontak
 Ray White Cipete
 
-Detail lengkap:
+Detail lengkap website:
 https://raywhitecipete.net/ListingView/Detail/$id
 
 #RayWhite #RayWhiteCipete #RumahCipete #RumahJakartaSelatan #PropertiJakartaSelatan #ListingProperti
@@ -113,12 +139,68 @@ https://raywhitecipete.net/ListingView/Detail/$id
 
   @override
   Widget build(BuildContext context) {
+    final state = Provider.of<AppStateProvider>(context);
+
+    // Collect all unique listing options
+    final allListings = <String>[];
+    for (final s in state.schedules) {
+      if (s.idListing.isNotEmpty && !allListings.contains(s.idListing)) allListings.add(s.idListing);
+    }
+    for (final m in state.meetingListings) {
+      if (m.idListing.isNotEmpty && !allListings.contains(m.idListing)) allListings.add(m.idListing);
+    }
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Quick Auto-Fill from Loaded Listings
+            if (allListings.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(CupertinoIcons.sparkles, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Pilih Listing:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: allListings.contains(_selectedListingId) ? _selectedListingId : null,
+                          hint: const Text('Pilih ID Properti...', style: TextStyle(fontSize: 12)),
+                          isDense: true,
+                          isExpanded: true,
+                          items: allListings.map((id) {
+                            final detail = state.getListingDetail(id);
+                            final title = detail?.title.isNotEmpty == true ? ' - ${detail!.title}' : '';
+                            return DropdownMenuItem(
+                              value: id,
+                              child: Text('$id$title', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) _onListingSelected(val, state);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Aspect Ratio Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,6 +245,35 @@ https://raywhitecipete.net/ListingView/Detail/$id
                   ),
                   child: Stack(
                     children: [
+                      // Real Property Background Photo from raywhitecipete.net
+                      if (_currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: _currentPhotoUrl!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.black.withOpacity(0.65),
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.80),
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       // Watermark / Logo Area
                       Positioned(
                         top: 16,
@@ -205,16 +316,17 @@ https://raywhitecipete.net/ListingView/Detail/$id
                         ),
                       ),
 
-                      // Center Mockup Graphic
+                      // Center Mockup Graphic / Info
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              CupertinoIcons.photo_fill_on_rectangle_fill,
-                              color: Colors.white24,
-                              size: 56,
-                            ),
+                            if (_currentPhotoUrl == null)
+                              const Icon(
+                                CupertinoIcons.photo_fill_on_rectangle_fill,
+                                color: Colors.white24,
+                                size: 56,
+                              ),
                             const SizedBox(height: 12),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -227,6 +339,7 @@ https://raywhitecipete.net/ListingView/Detail/$id
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  shadows: [Shadow(color: Colors.black, blurRadius: 6)],
                                 ),
                               ),
                             ),
@@ -237,8 +350,9 @@ https://raywhitecipete.net/ListingView/Detail/$id
                                   : 'Harga Properti',
                               style: const TextStyle(
                                 color: Color(0xFFFFE600),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                shadows: [Shadow(color: Colors.black, blurRadius: 6)],
                               ),
                             ),
                           ],
@@ -253,7 +367,7 @@ https://raywhitecipete.net/ListingView/Detail/$id
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.black.withOpacity(0.55),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: Colors.white24),
                           ),

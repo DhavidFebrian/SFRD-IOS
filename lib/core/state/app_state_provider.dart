@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/sheets_service.dart';
+import '../services/rwc_scraper_service.dart';
 import '../../features/media/models/schedule.dart';
 import '../../features/tasks/models/edit_foto_task.dart';
 import '../../features/weekly_meeting/models/meeting_listing.dart';
@@ -20,6 +21,7 @@ class AppStateProvider extends ChangeNotifier {
   static const String _keySelectedMonth = 'selected_active_month';
 
   final SheetsService _sheetsService = SheetsService();
+  final RwcScraperService _scraperService = RwcScraperService();
 
   String _selectedMonth = 'Juni 2026';
   String get selectedMonth => _selectedMonth;
@@ -47,6 +49,13 @@ class AppStateProvider extends ChangeNotifier {
 
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
+
+  // Scraped website data cache from raywhitecipete.net
+  final Map<String, ScrapedListingDetail> _scrapedDetails = {};
+  Map<String, ScrapedListingDetail> get scrapedDetails => _scrapedDetails;
+
+  final Set<String> _activeScrapes = {};
+  Set<String> get activeScrapes => _activeScrapes;
 
   AppStateProvider() {
     _init();
@@ -105,13 +114,15 @@ class AppStateProvider extends ChangeNotifier {
       _editFotoTasks = monthData.editFotoTasks;
       _meetingListings = listings;
 
-      // Automatically select first meeting date if available and not selected yet
       if (_selectedMeetingDate == null && listings.isNotEmpty) {
         final dates = listings.map((l) => l.date).where((d) => d.isNotEmpty).toSet().toList();
         if (dates.isNotEmpty) {
           _selectedMeetingDate = dates.first;
         }
       }
+
+      // Automatically trigger web scraping for all listing IDs in the background
+      _autoScrapeListings();
     } catch (e) {
       _errorMessage = 'Gagal memuat data dari Google Sheets: $e';
     } finally {
@@ -120,22 +131,100 @@ class AppStateProvider extends ChangeNotifier {
     }
   }
 
+  /// Automatically fetches website images & details for all active items
+  void _autoScrapeListings() {
+    final idsToScrape = <String, String>{};
+
+    for (final s in _schedules) {
+      if (s.idListing.isNotEmpty) idsToScrape[s.idListing] = s.namaMe;
+    }
+    for (final m in _meetingListings) {
+      if (m.idListing.isNotEmpty) idsToScrape[m.idListing] = m.namaMe;
+    }
+    for (final t in _editFotoTasks) {
+      if (t.idListing.isNotEmpty) idsToScrape[t.idListing] = t.namaMe;
+    }
+
+    // Process scraping with small batching to avoid flooding network
+    Future.microtask(() async {
+      for (final entry in idsToScrape.entries) {
+        fetchListingDetails(entry.key, defaultMeName: entry.value);
+      }
+    });
+  }
+
+  /// Fetches listing photos and details from raywhitecipete.net
+  Future<ScrapedListingDetail?> fetchListingDetails(
+    String idListing, {
+    String defaultMeName = '',
+    bool force = false,
+  }) async {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    if (cleanId.isEmpty) return null;
+
+    if (!force && _scrapedDetails.containsKey(cleanId)) {
+      return _scrapedDetails[cleanId];
+    }
+
+    if (_activeScrapes.contains(cleanId)) return null;
+    _activeScrapes.add(cleanId);
+
+    try {
+      final detail = await _scraperService.scrapeListing(
+        idListing,
+        defaultMeName: defaultMeName,
+        forceRefresh: force,
+      );
+
+      if (detail != null) {
+        _scrapedDetails[cleanId] = detail;
+        notifyListeners();
+        return detail;
+      }
+    } finally {
+      _activeScrapes.remove(cleanId);
+    }
+    return null;
+  }
+
+  ScrapedListingDetail? getListingDetail(String idListing) {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    return _scrapedDetails[cleanId];
+  }
+
+  String? getListingImage(String idListing) {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    return _scrapedDetails[cleanId]?.primaryImageUrl;
+  }
+
+  List<String> getListingGallery(String idListing) {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    return _scrapedDetails[cleanId]?.galleryImages ?? [];
+  }
+
+  String? getListingTitle(String idListing) {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    return _scrapedDetails[cleanId]?.title;
+  }
+
+  String? getListingPrice(String idListing) {
+    final cleanId = RwcScraperService.extractCleanId(idListing);
+    return _scrapedDetails[cleanId]?.price;
+  }
+
   /// Toggle Done on EditFotoTask and sync with Sheets
   Future<void> toggleEditFotoDone(EditFotoTask task) async {
     final newDone = !task.done;
     final updatedTask = task.copyWith(done: newDone);
 
-    // Optimistic local update
     final index = _editFotoTasks.indexWhere((t) => t.no == task.no && t.idListing == task.idListing);
     if (index != -1) {
       _editFotoTasks[index] = updatedTask;
       notifyListeners();
     }
 
-    // Remote sync
     final success = await _sheetsService.updateEditFotoTask(updatedTask, _selectedMonth);
     if (!success && index != -1) {
-      // Revert on failure
       _editFotoTasks[index] = task;
       notifyListeners();
     }
@@ -146,17 +235,14 @@ class AppStateProvider extends ChangeNotifier {
     final newPostingIg = !task.postingIg;
     final updatedTask = task.copyWith(postingIg: newPostingIg);
 
-    // Optimistic local update
     final index = _editFotoTasks.indexWhere((t) => t.no == task.no && t.idListing == task.idListing);
     if (index != -1) {
       _editFotoTasks[index] = updatedTask;
       notifyListeners();
     }
 
-    // Remote sync
     final success = await _sheetsService.updateEditFotoTask(updatedTask, _selectedMonth);
     if (!success && index != -1) {
-      // Revert on failure
       _editFotoTasks[index] = task;
       notifyListeners();
     }
@@ -180,7 +266,6 @@ class AppStateProvider extends ChangeNotifier {
     final newPostingIg = !listing.postingIg;
     final updatedListing = listing.copyWith(postingIg: newPostingIg);
 
-    // Optimistic local update
     final index = _meetingListings.indexWhere((l) => l.no == listing.no && l.idListing == listing.idListing);
     if (index != -1) {
       _meetingListings[index] = updatedListing;
@@ -208,6 +293,7 @@ class AppStateProvider extends ChangeNotifier {
     if (success) {
       _schedules.insert(0, scheduleWithSheet);
       notifyListeners();
+      fetchListingDetails(schedule.idListing, defaultMeName: schedule.namaMe);
     }
     return success;
   }
@@ -243,6 +329,7 @@ class AppStateProvider extends ChangeNotifier {
       );
       _meetingListings.insert(0, newListing);
       notifyListeners();
+      fetchListingDetails(idListing, defaultMeName: namaMe);
     }
     return success;
   }
