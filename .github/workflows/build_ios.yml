@@ -55,6 +55,9 @@ jobs:
           if [ -f "ios/Runner.xcodeproj/project.pbxproj" ]; then
             sed -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9\.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g" ios/Runner.xcodeproj/project.pbxproj || true
           fi
+          if [ -f "ios/Runner/Info.plist" ]; then
+            /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'RWC - Media Production'" ios/Runner/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'RWC - Media Production'" ios/Runner/Info.plist || true
+          fi
 
       - name: 📦 Install Flutter Dependencies
         run: |
