@@ -291,7 +291,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildScheduleMiniTile(Schedule sched) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedCornerShape(10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
         dense: true,
         leading: Container(

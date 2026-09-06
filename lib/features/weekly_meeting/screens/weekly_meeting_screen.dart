@@ -62,15 +62,15 @@ class _WeeklyMeetingScreenState extends State<WeeklyMeetingScreen> {
       }
 
       switch (_selectedFilter) {
-        'Hot Property':
+        case 'Hot Property':
           return l.isHot;
-        'Foto Ulang':
+        case 'Foto Ulang':
           return l.isFotoUlang;
-        'IG Post':
+        case 'IG Post':
           return l.isIgTarget;
-        'Sudah Posting IG':
+        case 'Sudah Posting IG':
           return l.postingIg;
-        'Belum Posting IG':
+        case 'Belum Posting IG':
           return !l.postingIg;
         default:
           return true;
@@ -212,7 +212,7 @@ class _WeeklyMeetingScreenState extends State<WeeklyMeetingScreen> {
   Widget _buildListingCard(BuildContext context, MeetingListing item, AppStateProvider state) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedCornerShape(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(14),

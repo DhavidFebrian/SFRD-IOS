@@ -80,11 +80,11 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
       }
 
       switch (_selectedFilter) {
-        'Belum Selesai':
+        case 'Belum Selesai':
           return !t.done;
-        'Belum Post IG':
+        case 'Belum Post IG':
           return !t.postingIg;
-        'Selesai':
+        case 'Selesai':
           return t.done;
         default:
           return true;
@@ -190,7 +190,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
   Widget _buildTaskCard(BuildContext context, EditFotoTask task, AppStateProvider state) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedCornerShape(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(14),

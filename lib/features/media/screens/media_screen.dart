@@ -148,7 +148,7 @@ class _MediaScreenState extends State<MediaScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedCornerShape(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -295,7 +295,7 @@ class _MediaScreenState extends State<MediaScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedCornerShape(8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   icon: const Icon(CupertinoIcons.chat_bubble_fill, size: 14),
                   label: const Text('Follow Up WA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
