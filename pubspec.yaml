@@ -1,7 +1,7 @@
 name: sfrd_ios
-description: "Aplikasi SFRD Real Estate Management & Marketing untuk iOS & Multiplatform."
+description: "RWC - Media Production Mobile App untuk iOS & Multiplatform."
 publish_to: "none"
-version: 1.0.0+1
+version: 8.8.11+891
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -39,3 +39,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/

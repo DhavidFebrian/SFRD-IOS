@@ -78,13 +78,14 @@ jobs:
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r SFRD-Release.ipa Payload
-          echo "IPA Created successfully at build/ios/iphoneos/SFRD-Release.ipa"
+          cp SFRD-Release.ipa RWC-Media-Production.ipa
+          echo "IPA Created successfully at build/ios/iphoneos/SFRD-Release.ipa & RWC-Media-Production.ipa"
 
       - name: 📤 Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SFRD-iOS-IPA
-          path: ${{ steps.locate-project.outputs.project_dir }}/build/ios/iphoneos/SFRD-Release.ipa
+          name: RWC-Media-Production-iOS-IPA
+          path: ${{ steps.locate-project.outputs.project_dir }}/build/ios/iphoneos/*.ipa
           if-no-files-found: warn
 
       - name: 📤 Upload Runner.app Archive

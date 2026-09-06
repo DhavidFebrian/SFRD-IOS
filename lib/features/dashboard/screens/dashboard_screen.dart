@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/sheets_service.dart';
 import '../../weekly_meeting/screens/weekly_meeting_screen.dart';
 import '../../attendance/screens/attendance_screen.dart';
 import '../../marketing/screens/instagram_mockup_screen.dart';
@@ -9,32 +10,99 @@ import '../../marketing/screens/wa_blast_screen.dart';
 import '../../tasks/screens/task_dashboard_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final SheetsService _sheetsService = SheetsService();
+  bool _isLoading = false;
+  int _totalCount = 142;
+  int _activeCount = 89;
+  int _doneCount = 48;
+  int _fotoUlangCount = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+    try {
+      final listings = await _sheetsService.fetchWeeklyMeetingListings();
+      if (listings.isNotEmpty) {
+        int total = listings.length;
+        int done = 0;
+        int fotoUlang = 0;
+        int active = 0;
+
+        for (var item in listings) {
+          final cat = item.catatan.toLowerCase();
+          final ket = item.keterangan.toLowerCase();
+          if (cat.contains('foto ulang') || ket.contains('foto ulang')) {
+            fotoUlang++;
+          } else if (item.status.toLowerCase() == 'disetujui' || item.postingIg == 'true') {
+            done++;
+          } else {
+            active++;
+          }
+        }
+
+        setState(() {
+          _totalCount = total;
+          _activeCount = active;
+          _doneCount = done;
+          _fotoUlangCount = fotoUlang;
+        });
+      }
+    } catch (_) {
+      // Keep existing default stats
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.apartment_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text(
-              'SFRD iOS',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/app_icon.png',
+                width: 28,
+                height: 28,
+                errorBuilder: (_, __, ___) => const Icon(Icons.movie_creation_rounded, color: AppColors.primary, size: 26),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'RWC - Media Production',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: -0.3),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.bell_badge_fill, color: AppColors.accent),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tidak ada notifikasi baru.')),
-              );
-            },
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(CupertinoIcons.arrow_clockwise, size: 20),
+            tooltip: 'Sync Data',
+            onPressed: _loadDashboardData,
           ),
           IconButton(
             icon: const Icon(CupertinoIcons.gear_alt_fill),
@@ -47,32 +115,45 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Banner Welcome
-            _buildWelcomeCard(context),
-            const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: _loadDashboardData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Banner Welcome
+              _buildWelcomeCard(context),
+              const SizedBox(height: 24),
 
-            // Quick Stats Grid
-            const Text(
-              'Statistik Aktivitas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            _buildStatsGrid(),
-            const SizedBox(height: 24),
+              // Quick Stats Grid
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Statistik Media & Listing',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'v8.8.11',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryLight),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildStatsGrid(),
+              const SizedBox(height: 24),
 
-            // Feature Menu
-            const Text(
-              'Modul Utama',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            _buildFeatureGrid(context),
-          ],
+              // Feature Menu
+              const Text(
+                'Modul Utama',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureGrid(context),
+            ],
+          ),
         ),
       ),
     );
@@ -107,15 +188,15 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selamat Datang di SFRD,',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    'Selamat Datang di RWC,',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Marketing Executive Hub',
+                    'Media Production Hub',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 19,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -127,7 +208,7 @@ class DashboardScreen extends StatelessWidget {
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(CupertinoIcons.shield_lefthalf_fill, color: Colors.white, size: 28),
+                child: const Icon(CupertinoIcons.sparkles, color: Colors.white, size: 24),
               )
             ],
           ),
@@ -152,7 +233,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -177,13 +258,23 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatsGrid() {
-    return Row(
+    return Column(
       children: [
-        _buildStatCard('Listing Aktif', '142', CupertinoIcons.house_alt, AppColors.primaryLight),
-        const SizedBox(width: 12),
-        _buildStatCard('Meeting Minggu Ini', '18', CupertinoIcons.calendar_today, AppColors.success),
-        const SizedBox(width: 12),
-        _buildStatCard('Tugas Tertunda', '5', CupertinoIcons.list_bullet, AppColors.warning),
+        Row(
+          children: [
+            _buildStatCard('Listing Aktif', '$_activeCount', CupertinoIcons.house_alt, AppColors.primaryLight),
+            const SizedBox(width: 12),
+            _buildStatCard('Selesai (Done)', '$_doneCount', CupertinoIcons.checkmark_seal_fill, AppColors.success),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildStatCard('Foto Ulang', '$_fotoUlangCount', CupertinoIcons.camera_rotate, AppColors.error),
+            const SizedBox(width: 12),
+            _buildStatCard('Total Listing', '$_totalCount', CupertinoIcons.square_grid_2x2, AppColors.warning),
+          ],
+        ),
       ],
     );
   }
@@ -195,23 +286,36 @@ class DashboardScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.Border.all(color: AppColors.borderLight),
+          border: Border.all(color: AppColors.borderLight),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -282,7 +386,7 @@ class DashboardScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => f['screen'] as Widget),
-            );
+            ).then((_) => _loadDashboardData());
           },
           borderRadius: BorderRadius.circular(16),
           child: Container(
@@ -290,7 +394,7 @@ class DashboardScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.Border.all(color: AppColors.borderLight),
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
