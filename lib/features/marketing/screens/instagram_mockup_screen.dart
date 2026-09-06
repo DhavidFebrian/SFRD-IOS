@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class InstagramMockupScreen extends StatefulWidget {
   const InstagramMockupScreen({Key? key}) : super(key: key);
@@ -11,261 +12,398 @@ class InstagramMockupScreen extends StatefulWidget {
 }
 
 class _InstagramMockupScreenState extends State<InstagramMockupScreen> {
-  String _aspectRatio = '1:1';
-  final _headlineController = TextEditingController(text: 'RUMAH MEWAH ARAYA');
-  final _priceController = TextEditingController(text: 'Rp 2,85 M');
-  final _specController = TextEditingController(text: 'LT 180m² | LB 220m² | 4 KT | 3 KM');
-  final _captionController = TextEditingController(
-    text: '✨ RUMAH MEWAH MINIMALIS 2 LANTAI ARAYA MALANG ✨\n\n'
-        'Lokasi sangat strategis, lingkungan tenang, bebas banjir, keamanan 24 jam one gate system.\n\n'
-        'Spesifikasi:\n'
-        '• Luas Tanah: 180 m²\n'
-        '• Luas Bangunan: 220 m²\n'
-        '• Kamar Tidur: 4 | Kamar Mandi: 3\n'
-        '• Carport 2 Mobil, Canopy, Taman Depan & Belakang\n'
-        '• Sertifikat: SHM & IMB Lengkap\n\n'
-        '💰 Harga: Rp 2.850.000.000 (Nego Tipis)\n\n'
-        'Informasi & Jadwal Survei Hubungi:\n'
-        '📲 WA: 0812-3456-7890 (David - RWC Media Production)\n\n'
-        '#RumahAraya #RumahMalang #PropertiMalang #RWC #RWCMediaProduction #ListingProperti',
-  );
+  String _aspectRatio = '1:1'; // 1:1, 4:5, 9:16
+
+  final _idController = TextEditingController(text: 'L-0912');
+  final _titleController = TextEditingController(text: 'Rumah Mewah Modern Siap Huni');
+  final _lokasiController = TextEditingController(text: 'Cipete Selatan, Jakarta Selatan');
+  final _hargaController = TextEditingController(text: 'Rp 6,5 Miliar (Nego)');
+  final _ltController = TextEditingController(text: '200');
+  final _lbController = TextEditingController(text: '250');
+  final _ktController = TextEditingController(text: '4+1');
+  final _kmController = TextEditingController(text: '3+1');
+  final _kontakController = TextEditingController(text: 'Ray White Cipete (0812-xxxx-xxxx)');
+
+  late TextEditingController _captionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _captionController = TextEditingController();
+    _regenerateCaption();
+  }
 
   @override
   void dispose() {
-    _headlineController.dispose();
-    _priceController.dispose();
-    _specController.dispose();
+    _idController.dispose();
+    _titleController.dispose();
+    _lokasiController.dispose();
+    _hargaController.dispose();
+    _ltController.dispose();
+    _lbController.dispose();
+    _ktController.dispose();
+    _kmController.dispose();
+    _kontakController.dispose();
     _captionController.dispose();
     super.dispose();
+  }
+
+  void _regenerateCaption() {
+    final id = _idController.text.trim();
+    final title = _titleController.text.trim();
+    final lokasi = _lokasiController.text.trim();
+    final harga = _hargaController.text.trim();
+    final lt = _ltController.text.trim();
+    final lb = _lbController.text.trim();
+    final kt = _ktController.text.trim();
+    final km = _kmController.text.trim();
+    final kontak = _kontakController.text.trim();
+
+    final caption = '''
+FOR SALE: $title
+📍 Lokasi: $lokasi
+🆔 ID Listing: $id
+
+SPESIFIKASI:
+• Luas Tanah: $lt m²
+• Luas Bangunan: $lb m²
+• Kamar Tidur: $kt
+• Kamar Mandi: $km
+• Legalitas: SHM / Lengkap
+• Harga: $harga
+
+Properti eksklusif dengan pencahayaan alami optimal, row jalan lebar, dan lingkungan tenang & strategis dekat stasiun MRT serta area komersial.
+
+Info & Private Showing:
+📞 $kontak
+Ray White Cipete
+
+Detail lengkap:
+https://raywhitecipete.net/ListingView/Detail/$id
+
+#RayWhite #RayWhiteCipete #RumahCipete #RumahJakartaSelatan #PropertiJakartaSelatan #ListingProperti
+'''.trim();
+
+    setState(() {
+      _captionController.text = caption;
+    });
+  }
+
+  void _copyCaption() {
+    Clipboard.setData(ClipboardData(text: _captionController.text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Caption berhasil disalin ke clipboard!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _shareToInstagram() async {
+    final text = _captionController.text;
+    final instagramUrl = Uri.parse('instagram://app');
+
+    if (await canLaunchUrl(instagramUrl)) {
+      await launchUrl(instagramUrl);
+    } else {
+      await Share.share(text, subject: 'Listing Ray White Cipete');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Instagram Mockup', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(CupertinoIcons.arrow_down_to_line_alt),
-            tooltip: 'Download Desain',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Gambar poster mockup disimpan ke Galeri Foto!'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Preview Poster Instagram Frame
-            _buildPosterPreview(),
-            const SizedBox(height: 20),
-
-            // Kontrol Aspek Rasio
-            const Text('Format Rasio:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 8),
-            Row(
-              children: ['1:1 (Square)', '4:5 (Portrait)', '9:16 (Story)'].map((ratio) {
-                final isSelected = _aspectRatio == ratio.split(' ')[0];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(ratio),
-                    selected: isSelected,
-                    selectedColor: AppColors.primaryLight.withOpacity(0.2),
-                    onSelected: (_) {
-                      setState(() => _aspectRatio = ratio.split(' ')[0]);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-
-            // Kontrol Teks
-            TextField(
-              controller: _headlineController,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'Judul Utama Poster',
-                prefixIcon: Icon(CupertinoIcons.text_badge_checkmark),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _priceController,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'Highlight Harga',
-                prefixIcon: Icon(CupertinoIcons.money_dollar),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _specController,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'Spesifikasi Singkat',
-                prefixIcon: Icon(CupertinoIcons.info_circle),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Editor Caption Instagram
+            // Aspect Ratio Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Caption Post Instagram:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                TextButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: _captionController.text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Caption berhasil disalin ke clipboard!')),
-                    );
+                const Text(
+                  'Format Rasio Instagram',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: '1:1', label: Text('1:1')),
+                    ButtonSegment(value: '4:5', label: Text('4:5')),
+                    ButtonSegment(value: '9:16', label: Text('9:16')),
+                  ],
+                  selected: {_aspectRatio},
+                  onSelectionChanged: (set) {
+                    setState(() => _aspectRatio = set.first);
                   },
-                  icon: const Icon(CupertinoIcons.doc_on_clipboard, size: 16),
-                  label: const Text('Salin Caption', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Instagram Feed Mockup Box
+            Center(
+              child: AspectRatio(
+                aspectRatio: _aspectRatio == '1:1'
+                    ? 1.0
+                    : (_aspectRatio == '4:5' ? (4 / 5) : (9 / 16)),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2B2D42),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      // Watermark / Logo Area
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE600),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'RAY WHITE CIPETE',
+                            style: TextStyle(
+                              color: Color(0xFF2B2D42),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _idController.text.isNotEmpty ? _idController.text : 'ID LISTING',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Center Mockup Graphic
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              CupertinoIcons.photo_fill_on_rectangle_fill,
+                              color: Colors.white24,
+                              size: 56,
+                            ),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                _titleController.text.isNotEmpty
+                                    ? _titleController.text
+                                    : 'Judul Listing Properti',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _hargaController.text.isNotEmpty
+                                  ? _hargaController.text
+                                  : 'Harga Properti',
+                              style: const TextStyle(
+                                color: Color(0xFFFFE600),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Bottom Specs Strip
+                      Positioned(
+                        bottom: 14,
+                        left: 14,
+                        right: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Text('LT: ${_ltController.text}m²', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                              Text('LB: ${_lbController.text}m²', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                              Text('KT: ${_ktController.text}', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                              Text('KM: ${_kmController.text}', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Form Properti
+            const Text(
+              'Detail Spesifikasi Properti',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _idController,
+                    decoration: const InputDecoration(labelText: 'ID Listing', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _hargaController,
+                    decoration: const InputDecoration(labelText: 'Harga', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Judul Listing', border: OutlineInputBorder(), isDense: true),
+              onChanged: (_) => _regenerateCaption(),
+            ),
+            const SizedBox(height: 10),
+
+            TextFormField(
+              controller: _lokasiController,
+              decoration: const InputDecoration(labelText: 'Lokasi', border: OutlineInputBorder(), isDense: true),
+              onChanged: (_) => _regenerateCaption(),
+            ),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _ltController,
+                    decoration: const InputDecoration(labelText: 'LT (m²)', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _lbController,
+                    decoration: const InputDecoration(labelText: 'LB (m²)', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _ktController,
+                    decoration: const InputDecoration(labelText: 'KT', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _kmController,
+                    decoration: const InputDecoration(labelText: 'KM', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => _regenerateCaption(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Generated Caption
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Generated Instagram Caption',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                IconButton(
+                  icon: const Icon(CupertinoIcons.doc_on_doc, size: 18, color: Colors.blue),
+                  onPressed: _copyCaption,
+                  tooltip: 'Salin Caption',
                 ),
               ],
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _captionController,
-              maxLines: 6,
-              style: const TextStyle(fontSize: 13, height: 1.4),
-              decoration: InputDecoration(
-                hintText: 'Tulis caption Instagram lengkap di sini...',
+              maxLines: 8,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                fillColor: Color(0xFFF9F9F9),
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
+            const SizedBox(height: 14),
 
-  Widget _buildPosterPreview() {
-    double height = 320;
-    if (_aspectRatio == '4:5') height = 380;
-    if (_aspectRatio == '9:16') height = 440;
-
-    return Center(
-      child: Container(
-        width: double.infinity,
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Dummy image illustration
-            Center(
-              child: Icon(
-                Icons.image_outlined,
-                size: 80,
-                color: Colors.white.withOpacity(0.15),
-              ),
-            ),
-            // Header Tag & Watermark
-            Positioned(
-              top: 16,
-              left: 16,
-              right: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'RWC MEDIA',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'EXCLUSIVE LISTING',
-                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Bottom Info Overlay
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                  gradient: LinearGradient(
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _copyCaption,
+                    icon: const Icon(CupertinoIcons.doc_on_doc, size: 16),
+                    label: const Text('Salin Caption'),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _headlineController.text,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _shareToInstagram,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE1306C),
+                      foregroundColor: Colors.white,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _priceController.text,
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _specController.text,
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                    ),
-                  ],
+                    icon: const Icon(CupertinoIcons.share, size: 16),
+                    label: const Text('Buka IG / Share'),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

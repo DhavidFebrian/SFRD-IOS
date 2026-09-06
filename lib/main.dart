@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
-import 'features/dashboard/screens/dashboard_screen.dart';
+import 'core/state/app_state_provider.dart';
+import 'main_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +12,14 @@ void main() {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const SfrdApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppStateProvider()),
+      ],
+      child: const SfrdApp(),
+    ),
+  );
 }
 
 class SfrdApp extends StatelessWidget {
@@ -24,7 +33,7 @@ class SfrdApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      home: const DashboardScreen(),
+      home: const MainScreen(),
     );
   }
 }

@@ -1,67 +1,120 @@
 class MeetingListing {
-  final String id;
+  final int no;
+  final int row;
+  final int colIndex;
+  final String date;
   final String idListing;
   final String namaMe;
   final String judul;
-  final String harga;
   final String lokasi;
   final String keterangan;
-  final String postingIg;
+  final bool postingIg;
   final String jadwalPosting;
-  final String imageUrl;
   final String catatan;
-  final String status;
-  final String date;
-  final DateTime createdAt;
+  final String sheetName;
 
   MeetingListing({
-    required this.id,
+    this.no = 0,
+    this.row = 0,
+    this.colIndex = 0,
+    this.date = '',
     required this.idListing,
     required this.namaMe,
     this.judul = '',
-    this.harga = '',
     this.lokasi = '',
     this.keterangan = '',
-    this.postingIg = '',
+    this.postingIg = false,
     this.jadwalPosting = '',
-    this.imageUrl = '',
     this.catatan = '',
-    this.status = 'Review',
-    this.date = '',
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.sheetName = '',
+  });
+
+  String get cleanId => idListing.trim();
+
+  String get websiteUrl => cleanId.isNotEmpty 
+      ? 'https://raywhitecipete.net/ListingView/Detail/$cleanId'
+      : '';
+
+  String get mapsQueryUrl => lokasi.trim().isNotEmpty
+      ? 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(lokasi.trim())}'
+      : '';
+
+  bool get isHot => keterangan.toLowerCase().contains('hot');
+  bool get isFotoUlang => keterangan.toLowerCase().contains('foto ulang') || keterangan.toLowerCase().contains('ulang');
+  bool get isIgTarget => keterangan.toLowerCase().contains('ig') || keterangan.toLowerCase().contains('instagram');
+
+  factory MeetingListing.fromJson(Map<String, dynamic> json, [String defaultSheet = '']) {
+    bool parseBool(dynamic val) {
+      if (val is bool) return val;
+      if (val == null) return false;
+      final s = val.toString().toLowerCase().trim();
+      return s == 'true' || s == '1' || s == 'yes';
+    }
+
+    return MeetingListing(
+      no: json['no'] is int ? json['no'] : (int.tryParse(json['no']?.toString() ?? '0') ?? 0),
+      row: json['row'] is int ? json['row'] : (int.tryParse(json['row']?.toString() ?? '0') ?? 0),
+      colIndex: json['colIndex'] is int ? json['colIndex'] : (int.tryParse(json['colIndex']?.toString() ?? '0') ?? 0),
+      date: (json['date'] ?? '').toString().trim(),
+      idListing: (json['idListing'] ?? json['id'] ?? '').toString().trim(),
+      namaMe: (json['namaMe'] ?? '').toString().trim(),
+      judul: (json['judul'] ?? json['keterangan'] ?? '').toString().trim(),
+      lokasi: (json['lokasi'] ?? '').toString().trim(),
+      keterangan: (json['keterangan'] ?? '').toString().trim(),
+      postingIg: parseBool(json['postingIg']),
+      jadwalPosting: (json['jadwalPosting'] ?? '').toString().trim(),
+      catatan: (json['catatan'] ?? '').toString().trim(),
+      sheetName: (json['sheetName'] != null && json['sheetName'].toString().isNotEmpty)
+          ? json['sheetName'].toString().trim()
+          : defaultSheet,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
+    'no': no,
+    'row': row,
+    'colIndex': colIndex,
+    'date': date,
     'idListing': idListing,
     'namaMe': namaMe,
     'judul': judul,
-    'harga': harga,
     'lokasi': lokasi,
     'keterangan': keterangan,
     'postingIg': postingIg,
     'jadwalPosting': jadwalPosting,
-    'imageUrl': imageUrl,
     'catatan': catatan,
-    'status': status,
-    'date': date,
-    'createdAt': createdAt.toIso8601String(),
+    'sheetName': sheetName,
   };
 
-  factory MeetingListing.fromJson(Map<String, dynamic> json) => MeetingListing(
-    id: (json['id'] ?? json['no'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
-    idListing: (json['idListing'] ?? json['id'] ?? '').toString(),
-    namaMe: (json['namaMe'] ?? '').toString(),
-    judul: (json['judul'] ?? json['keterangan'] ?? '').toString(),
-    harga: (json['harga'] ?? '').toString(),
-    lokasi: (json['lokasi'] ?? '').toString(),
-    keterangan: (json['keterangan'] ?? '').toString(),
-    postingIg: (json['postingIg'] ?? '').toString(),
-    jadwalPosting: (json['jadwalPosting'] ?? '').toString(),
-    imageUrl: (json['imageUrl'] ?? '').toString(),
-    catatan: (json['catatan'] ?? '').toString(),
-    status: (json['status'] ?? (json['postingIg'] == true || json['postingIg'] == 'true' ? 'Disetujui' : 'Review')).toString(),
-    date: (json['date'] ?? '').toString(),
-    createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
-  );
+  MeetingListing copyWith({
+    int? no,
+    int? row,
+    int? colIndex,
+    String? date,
+    String? idListing,
+    String? namaMe,
+    String? judul,
+    String? lokasi,
+    String? keterangan,
+    bool? postingIg,
+    String? jadwalPosting,
+    String? catatan,
+    String? sheetName,
+  }) {
+    return MeetingListing(
+      no: no ?? this.no,
+      row: row ?? this.row,
+      colIndex: colIndex ?? this.colIndex,
+      date: date ?? this.date,
+      idListing: idListing ?? this.idListing,
+      namaMe: namaMe ?? this.namaMe,
+      judul: judul ?? this.judul,
+      lokasi: lokasi ?? this.lokasi,
+      keterangan: keterangan ?? this.keterangan,
+      postingIg: postingIg ?? this.postingIg,
+      jadwalPosting: jadwalPosting ?? this.jadwalPosting,
+      catatan: catatan ?? this.catatan,
+      sheetName: sheetName ?? this.sheetName,
+    );
+  }
 }

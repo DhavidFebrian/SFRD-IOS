@@ -33,7 +33,7 @@ class _WaBlastScreenState extends State<WaBlastScreen> {
       return;
     }
 
-    WhatsAppFormatter.sendWhatsAppMessage(
+    WhatsAppFormatter.openWhatsApp(
       phoneNumber: _phoneController.text.trim(),
       message: _messageController.text,
     );

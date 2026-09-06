@@ -19,11 +19,11 @@ class AppTheme {
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimaryLight,
+        backgroundColor: Color(0xFF2B2D42),
+        foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
 
       inputDecorationTheme: InputDecorationTheme(
