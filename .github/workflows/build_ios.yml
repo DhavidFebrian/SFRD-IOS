@@ -44,7 +44,7 @@ jobs:
           cd ${{ steps.locate-project.outputs.project_dir }}
           flutter create --project-name sfrd_ios --platforms=ios --org com.aistudio.jadwalfoto.qywrkx .
 
-      - name: ⚙️ Configure iOS 15.5+ Deployment Target for ML Kit
+      - name: ⚙️ Configure iOS 15.5+ Deployment Target & Bypass Signing
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}
           # Set minimum iOS deployment target in Podfile & Xcode project to 15.5
@@ -54,6 +54,16 @@ jobs:
           fi
           if [ -f "ios/Runner.xcodeproj/project.pbxproj" ]; then
             sed -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9\.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g" ios/Runner.xcodeproj/project.pbxproj || true
+            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = /DEVELOPMENT_TEAM = 5A12345678;\
+				CODE_SIGNING_REQUIRED = NO;\
+				CODE_SIGNING_ALLOWED = NO;\
+				PRODUCT_BUNDLE_IDENTIFIER = /g" ios/Runner.xcodeproj/project.pbxproj || true
+          fi
+          if [ -f "ios/Flutter/Release.xcconfig" ]; then
+            echo "DEVELOPMENT_TEAM=5A12345678" >> ios/Flutter/Release.xcconfig
+            echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
+            echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+            echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
           fi
           if [ -f "ios/Runner/Info.plist" ]; then
             /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'RWC - Media Production'" ios/Runner/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'RWC - Media Production'" ios/Runner/Info.plist || true
@@ -73,15 +83,27 @@ jobs:
       - name: 🚀 Build iOS IPA (No-CodeSign for Sideloading/AltStore/TrollStore)
         run: |
           cd ${{ steps.locate-project.outputs.project_dir }}
-          flutter build ios --no-codesign --release
+          # Build with Flutter no-codesign, or fallback to direct xcodebuild
+          flutter build ios --no-codesign --release || {
+            echo "Direct xcodebuild fallback..."
+            cd ios
+            xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" clean build
+            cd ..
+          }
           
-          # Package Payload into installable .ipa
-          cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r SFRD-Release.ipa Payload
-          cp SFRD-Release.ipa RWC-Media-Production.ipa
-          echo "IPA Created successfully at build/ios/iphoneos/SFRD-Release.ipa & RWC-Media-Production.ipa"
+          # Find Runner.app and package Payload into installable .ipa
+          mkdir -p build/ios/iphoneos/Payload
+          RUNNER_DIR=$(find . -name "Runner.app" -type d | head -n 1)
+          if [ -n "$RUNNER_DIR" ]; then
+            cp -r "$RUNNER_DIR" build/ios/iphoneos/Payload/
+            cd build/ios/iphoneos
+            zip -r SFRD-Release.ipa Payload
+            cp SFRD-Release.ipa RWC-Media-Production.ipa
+            echo "IPA Created successfully at build/ios/iphoneos/SFRD-Release.ipa & RWC-Media-Production.ipa"
+          else
+            echo "Error: Runner.app not found!"
+            exit 1
+          fi
 
       - name: 📤 Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
