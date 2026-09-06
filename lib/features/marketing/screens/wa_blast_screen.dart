@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/whatsapp_formatter.dart';
 
@@ -15,7 +14,7 @@ class _WaBlastScreenState extends State<WaBlastScreen> {
   final _phoneController = TextEditingController();
   final _clientNameController = TextEditingController();
   final _messageController = TextEditingController(
-    text: "Halo Bapak/Ibu,\n\nBerikut rekomendasi listing properti terbaik dari SFRD Real Estate minggu ini. Lokasi sangat strategis dan siap survei!",
+    text: "Halo Bapak/Ibu,\n\nBerikut rekomendasi listing properti terbaik dari RWC - Media Production minggu ini. Lokasi sangat strategis dan siap survei!",
   );
 
   @override
@@ -60,7 +59,7 @@ class _WaBlastScreenState extends State<WaBlastScreen> {
               ),
               child: const Row(
                 children: [
-                  FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 28),
+                  Icon(CupertinoIcons.chat_bubble_2_fill, color: Color(0xFF25D366), size: 28),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -109,7 +108,7 @@ class _WaBlastScreenState extends State<WaBlastScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: _sendBlast,
-                icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 20),
+                icon: const Icon(CupertinoIcons.chat_bubble_2_fill, size: 20),
                 label: const Text('Buka di WhatsApp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF25D366),

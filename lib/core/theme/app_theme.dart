@@ -25,14 +25,7 @@ class AppTheme {
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
-      cardTheme: CardTheme(
-        color: AppColors.surfaceLight,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.borderLight, width: 1),
-        ),
-      ),
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
@@ -74,14 +67,7 @@ class AppTheme {
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
-      cardTheme: CardTheme(
-        color: AppColors.surfaceDark,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.borderDark, width: 1),
-        ),
-      ),
+
     );
   }
 }

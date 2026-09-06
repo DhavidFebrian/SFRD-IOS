@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/sheets_service.dart';
 import '../../weekly_meeting/screens/weekly_meeting_screen.dart';
@@ -342,14 +341,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       {
         'title': 'Instagram Mockup',
         'subtitle': 'Generator template & poster',
-        'icon': FontAwesomeIcons.instagram,
+        'icon': CupertinoIcons.camera_fill,
         'color': const Color(0xFFE1306C),
         'screen': const InstagramMockupScreen(),
       },
       {
         'title': 'WhatsApp Blast',
         'subtitle': 'Broadcast promosi instan',
-        'icon': FontAwesomeIcons.whatsapp,
+        'icon': CupertinoIcons.chat_bubble_2_fill,
         'color': const Color(0xFF25D366),
         'screen': const WaBlastScreen(),
       },

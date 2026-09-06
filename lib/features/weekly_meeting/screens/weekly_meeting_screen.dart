@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/sheets_service.dart';
 import '../../../core/utils/whatsapp_formatter.dart';
@@ -590,7 +589,7 @@ class _WeeklyMeetingScreenState extends State<WeeklyMeetingScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 20),
+                icon: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Color(0xFF25D366), size: 22),
                 tooltip: 'Kirim via WhatsApp',
                 onPressed: () {
                   final text = WhatsAppFormatter.formatWeeklyMeetingBroadcast(
