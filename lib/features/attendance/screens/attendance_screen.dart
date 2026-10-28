@@ -846,7 +846,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         );
                         final contact = findAgentContact(
                           agent.name,
-                          state.customAgents,
+                          customAgents: state.customAgents,
                         );
                         final avatarUrl = contact?.avatarUrl.isNotEmpty == true
                             ? contact!.avatarUrl
