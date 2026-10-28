@@ -11,6 +11,13 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+    ),
+  );
 
   runApp(
     MultiProvider(
@@ -23,16 +30,22 @@ void main() {
 }
 
 class SfrdApp extends StatelessWidget {
-  const SfrdApp({Key? key}) : super(key: key);
+  const SfrdApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppStateProvider>();
+    final activeTheme = AppTheme.buildTheme(
+      style: state.selectedThemeStyle,
+      isDark: state.isDarkTheme,
+    );
+
     return MaterialApp(
       title: 'RWC - Media Production',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      theme: activeTheme,
+      darkTheme: activeTheme,
+      themeMode: state.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
       home: const MainScreen(),
     );
   }

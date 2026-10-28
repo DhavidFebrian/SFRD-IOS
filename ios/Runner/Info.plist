@@ -46,9 +46,23 @@
 	<string>Aplikasi SFRD membutuhkan akses kamera untuk fitur Presensi Face Recognition, Scan ID Listing, dan Pengambilan Foto Properti.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Aplikasi SFRD membutuhkan akses galeri foto untuk memilih atau menyimpan poster promosi dan dokumentasi listing.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Aplikasi SFRD membutuhkan izin penyimpanan galeri untuk menyimpan poster RWC Design 3 dan dokumen Newsletter.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Aplikasi SFRD membutuhkan akses mikrofon untuk perekaman video dokumentasi.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Aplikasi SFRD membutuhkan lokasi untuk validasi kehadiran absensi weekly meeting.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>whatsapp-business</string>
+		<string>https</string>
+		<string>http</string>
+		<string>tel</string>
+	</array>
+	<!-- App Transport Security for network image loading and scraping -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

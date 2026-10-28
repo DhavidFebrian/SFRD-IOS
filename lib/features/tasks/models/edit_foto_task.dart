@@ -1,5 +1,5 @@
 class EditFotoTask {
-  final int no;
+  final String no;
   final String idListing;
   final String namaMe;
   final bool postingIg;
@@ -12,7 +12,7 @@ class EditFotoTask {
   final bool synced;
 
   EditFotoTask({
-    this.no = 0,
+    dynamic no = '',
     required this.idListing,
     required this.namaMe,
     this.postingIg = false,
@@ -23,24 +23,59 @@ class EditFotoTask {
     this.source = '',
     this.sheetName = '',
     this.synced = true,
-  });
+  }) : no = (no == null || no == 0) ? '' : no.toString().trim();
 
-  String get cleanId => idListing.trim();
+  String get cleanId {
+    final raw = idListing.trim();
+    final m = RegExp(r'\d+').firstMatch(raw);
+    return m != null ? m.group(0)! : raw;
+  }
 
-  String get websiteUrl => cleanId.isNotEmpty 
+  String get websiteUrl => cleanId.isNotEmpty
       ? 'https://raywhitecipete.net/ListingView/Detail/$cleanId'
       : '';
 
-  factory EditFotoTask.fromJson(Map<String, dynamic> json, [String defaultSheet = '']) {
+  bool get isEditVideo {
+    final n = editNotes.toLowerCase();
+    final j = judul.toLowerCase();
+    final s = source.toLowerCase();
+    return n.contains('video') ||
+        j.contains('video') ||
+        s.contains('video') ||
+        n.contains('reels');
+  }
+
+  bool get isGarisTanah {
+    final n = editNotes.toLowerCase();
+    final j = judul.toLowerCase();
+    final s = source.toLowerCase();
+    return n.contains('drone') ||
+        n.contains('garis') ||
+        n.contains('tanah') ||
+        j.contains('drone') ||
+        s.contains('drone');
+  }
+
+  bool get isUpFoto => !isEditVideo && !isGarisTanah;
+
+  factory EditFotoTask.fromJson(
+    Map<String, dynamic> json, [
+    String defaultSheet = '',
+  ]) {
     bool parseBool(dynamic val) {
       if (val is bool) return val;
       if (val == null) return false;
       final s = val.toString().toLowerCase().trim();
-      return s == 'true' || s == '1' || s == 'yes';
+      return s == 'true' ||
+          s == '1' ||
+          s == 'yes' ||
+          s == 'ya' ||
+          s == 'done' ||
+          s == '✔';
     }
 
     return EditFotoTask(
-      no: json['no'] is int ? json['no'] : (int.tryParse(json['no']?.toString() ?? '0') ?? 0),
+      no: (json['no'] ?? '').toString().trim(),
       idListing: (json['idListing'] ?? '').toString().trim(),
       namaMe: (json['namaMe'] ?? '').toString().trim(),
       postingIg: parseBool(json['postingIg']),
@@ -49,29 +84,30 @@ class EditFotoTask {
       done: parseBool(json['done']),
       judul: (json['judul'] ?? '').toString().trim(),
       source: (json['source'] ?? '').toString().trim(),
-      sheetName: (json['sheetName'] != null && json['sheetName'].toString().isNotEmpty)
+      sheetName: (json['sheetName'] != null &&
+              json['sheetName'].toString().isNotEmpty)
           ? json['sheetName'].toString().trim()
           : defaultSheet,
       synced: true,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'action': 'edit_foto',
-    'no': no,
-    'idListing': idListing,
-    'namaMe': namaMe,
-    'postingIg': postingIg,
-    'jadwalPosting': jadwalPosting,
-    'editNotes': editNotes,
-    'done': done,
-    'judul': judul,
-    'source': source,
-    'sheetName': sheetName,
-  };
+  Map<String, dynamic> toJson({String? sheetNameOverride}) => {
+        'action': 'edit_foto',
+        'no': no,
+        'idListing': idListing,
+        'namaMe': namaMe,
+        'postingIg': postingIg,
+        'jadwalPosting': jadwalPosting,
+        'editNotes': editNotes,
+        'done': done,
+        'judul': judul,
+        'source': source,
+        'sheetName': sheetNameOverride ?? sheetName,
+      };
 
   EditFotoTask copyWith({
-    int? no,
+    dynamic no,
     String? idListing,
     String? namaMe,
     bool? postingIg,

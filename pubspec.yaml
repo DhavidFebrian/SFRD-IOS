@@ -1,7 +1,7 @@
 name: sfrd_ios
-description: "RWC - Media Production Mobile App untuk iOS & Multiplatform."
+description: "RWC - Media Production Mobile App untuk iOS & Multiplatform (v8.9.15)."
 publish_to: "none"
-version: 8.8.11+891
+version: 8.9.15+8915
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -24,13 +24,14 @@ dependencies:
   google_mlkit_face_detection: ^0.12.0
   google_mlkit_text_recognition: ^0.14.0
 
-  # Networking, Storage & Utilities
+  # Networking, PDF, Storage & Utilities
   http: ^1.2.2
   url_launcher: ^6.3.0
   shared_preferences: ^2.3.2
   path_provider: ^2.1.4
   share_plus: ^10.0.2
   provider: ^6.1.2
+  pdf: ^3.11.1
 
 dev_dependencies:
   flutter_test:
